@@ -1,26 +1,11 @@
 /*****************************************
- * Instructions
- *  - Replace 'uwuserid' with your uWaterloo User ID
- *  - Select the current calendar term and enter the year
- *  - List students with whom you had discussions and who helped you
- *
- * uWaterloo User ID:  uwuserid @uwaterloo.ca
- * Submitted for ECE 250
- * Department of Electrical and Computer Engineering
- * University of Waterloo
- * Calender Term of Submission:  (Winter|Spring|Fall) 201N
- *
- * By submitting this file, I affirm that
- * I am the author of all modifications to
- * the provided code.
- *
- * The following is a list of uWaterloo User IDs of those students
- * I had discussions with in preparing this project:
- *    -
- *
- * The following is a list of uWaterloo User IDs of those students
- * who helped me with this project (describe their help; e.g., debugging):
- *    -
+ Project 5 - CIS 22C
+ 
+ * Contributors:
+ * Evan Finnigan
+ * Forest Finnigan
+ * Jonathan Jeng
+ * Abhishek Rajbahndri
  *****************************************/
 
 #ifndef WEIGHTED_GRAPH_H
@@ -35,6 +20,7 @@
 #include "Exception.h"
 #include "Dynamic_queue.h"
 
+// My current idea is to use an adjacency matrix and this is potentially more costly, but allows for unknowns, such as the number of edges. Can also represent with an edge list but searching this list is more costly
 
 class Weighted_graph {
 private:
@@ -42,7 +28,6 @@ private:
     int numVertices;
     int* graphVertices;
     double** weights;
-    char* edges;
     
     // Do not implement these functions!
     // By making these private and not implementing them, any attempt
@@ -73,7 +58,7 @@ const double Weighted_graph::INF = std::numeric_limits<double>::infinity();
 
 Weighted_graph::Weighted_graph( int n ) :
 numVertices(n) {
-    // The constructor takes an argument n which defines a graph with vertices numbered from 0 through n − 1. The vertex i is given an initial priority of i. The default value of n is 10.
+    // Assume a graph with vertices numbered from 0 through n − 1. The vertex i is given an ?initial? priority of i.
 
     weights = new double*[numVertices];
     for (int i = 0; i < numVertices; ++i)
@@ -111,8 +96,8 @@ int Weighted_graph::edge_count() const {
     int count = 0;
     for (int i = 0; i < numVertices; i++)
         for (int j = 0; j < numVertices; j++)
-            if (weights[i][j] != INF) count++;  // But this counts i-j and j-i - how to account for this extraneous count?
-    return (numVertices+1);
+            if (weights[i][j] != INF) count++;
+    return (count/2);
 }
 
 bool Weighted_graph::insert_edge( int i, int j, double w ) {
