@@ -26,6 +26,7 @@ class Weighted_graph {
 private:
     static const double INF;
     int numVertices;
+    int numEdges;
     int* graphVertices;
     double** weights;
     
@@ -57,7 +58,7 @@ public:
 const double Weighted_graph::INF = std::numeric_limits<double>::infinity();
 
 Weighted_graph::Weighted_graph( int n ) :
-numVertices(n) {
+numVertices(n), numEdges(0) {
     // Assume a graph with vertices numbered from 0 through n − 1. The vertex i is given an ?initial? priority of i.
 
     weights = new double*[numVertices];
@@ -107,26 +108,62 @@ bool Weighted_graph::insert_edge( int i, int j, double w ) {
     // If i equals j and are in the graph, return false (self edges are inconsequential)
     if (i==j && i >= 0 && i < numVertices && j >= 0 && j < numVertices)
         return false;
-    // If an edge between i and j would form a cycle (if there is already a path from i to j, return false
-    // BFS from i
-    if ()
+    // If a parallel edge of inconsequential (equal or heavier) weight would be formed, return false
+    if (weights[i][j] != INF && w >= weights[i][j])
         return false;
-    // Otherwise, either insert a new edge from vertex i to vertex j or, if the edge already exists, update the weight and return true (parallel edge - but shouldn't we only update the weight if it is lower than the preexisting weight?).
+    // Otherwise, the new edge is safe to insert, as there was either no edge there yet, or an edge of greater weight (parallel edge - but shouldn't we only update the weight if it is lower than the preexisting weight?).
     weights[i][j] = w;
+    numEdges++;
     return true;
 }
 
 bool Weighted_graph::erase_edge(int i, int j) {
-    // If an edge between nodes i and j exists, remove the edge. In this case or if i equals j return true. Otherwise, if no edge exists, return false. If i or j are outside the range 0, ..., n − 1, throw an illegal argument exception.
+    // If i and j are outside the legal range, they are invalid - throw an exception
+    if (i < 0 || i > numVertices || j < 0 || j > numVertices) throw illegal_argument();
+    
+    // If a specified edge exists, remove it (set its weight to INF) and return true.
+    if (weights[i][j] != INF || i == j) {
+        weights[i][j] = INF;
+        numEdges--;
+        return true;
+    }
+    
+    // Otherwise, the erasure cannot be completed so return false
     return false;
 }
 
 void Weighted_graph::clear_edges() {
     // Removes all the edges from the graph.
+    if (numEdges > 0) {
+        numEdges = 0;
+        for (int i = 0; i < numVertices; i++)
+            for (int j = 0; j < numVertices; j++)
+                weights[i][j] = INF;
+    }
 }
 
 std::pair<double, int> Weighted_graph::minimum_spanning_tree() const {
     // Use Kruskal's algorithm to find the minimum spanning tree. You will return the weight of the minimum spanning tree and the number of edges that were tested for insertion into the minimum spanning tree.
+    
+    // If there are no edges or only one edge in the graph, insertion will not create a cycle and so is legal
+
+    // DFS from i
+    Dynamic_queue<int> BFSqueue(numEdges + 1);
+    int DFS_stack[numEdges+1];
+    int top_of_stack = 0;
+    int startingNode = -1;
+    bool loopBreak = false;
+    for (int i = 0; i < numVertices; i++) {
+        for (int j = 0; j < numVertices; j++) {
+            if (weights[i][j] != INF) {
+                startingNode = i;
+                loopBreak = true;
+                break;
+            }
+        }
+        if (loopBreak) break;
+    }
+
     return std::pair<double, int>( 0.0, 0 );
 }
 
