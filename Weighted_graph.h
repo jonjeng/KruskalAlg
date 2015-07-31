@@ -149,82 +149,69 @@ std::pair<double, int> Weighted_graph::minimum_spanning_tree() const {
     // If there aren't at least n + 1 vertices, where n is the number of edges, there is no spanning tree
     if (numEdges >= numVertices - 1) {
         // Use Kruskal's algorithm to find the minimum spanning tree. You will return the weight of the minimum spanning tree and the number of edges that were tested for insertion into the minimum spanning tree.
-        int edgesTested = 0, nodesLeft = numVertices;
-        double MSTWeight = 0.0;
+        int edgesTested = 0, nodesLeft = numVertices, edgeNode1[numEdges], edgeNode2[numEdges], edgeTop = 0, disjointSetEdges[numVertices];
+        double MSTWeight = 0.0, edgeWeights[numEdges];
         
+        for (int i = 0; i < numVertices; i++)
+            disjointSetEdges[i] = -1;
+        
+        // Store edges separately
         double** weightsCopy = new double*[numVertices];
         for (int i = 0; i < numVertices; i++)
             weightsCopy[i] = new double[numVertices];
-        for (int i = 0; i < numVertices; i++)
-            for (int j = 0; j < numVertices; j++)
+        for (int i = 0; i < numVertices; i++) {
+            for (int j = 0; j < numVertices; j++) {
                 weightsCopy[i][j] = weights[i][j];
-        
-        while (nodesLeft > 0) {
-            // Find the smallest weighted edge using the weight matrix
-            double minWeight = 0.0;
-            int v1 = -1, v2 = -2;
-            for (int i = 0; i < numVertices; i++) {
-                for (int j = 0; j < numVertices; j++) {
-                    if (weightsCopy[i][j] != INF) {
-                        weightsCopy[j][i] = INF;
-                        if (minWeight == 0.0) {
-                            minWeight = weights[i][j];
-                            v1 = i; v2 = j;
-                        }
-                        else if (weights[i][j] < minWeight) {
-                            minWeight = weights[i][j];
-                            v1 = i; v2 = j;
-                        }
-                        weightsCopy[i][j] = INF;
-                    }
-                }
             }
-            
-            
-            
-            // Test if the edge creates a cycle
-            bool done = false;
-            int DFS_stack1[numEdges], DFS_stack2[numEdges];
-            DFS_stack1[0] = v1; DFS_stack2[0] = v2;
-            int top_of_stack = 0;
-            
-            while (!done && nodesLeft > 0) {
-                int curr = DFS_stack[top_of_stack];
-                int vertices[numVertices];
-                int vtop = 0;
-                for (int i = 0; i < numVertices; i++)
-                    vertices[i] = -1;
-                double vweights[numVertices];
-                for (int i = 0; i < numVertices; i++)
-                    vweights[i] = 0.0;
-                
-                
-                // Find adjacent nodes
-                for (int i = 0; i < numVertices; i++) {
-                    if (weights[curr][i] != INF) {
-                        vertices[vtop] = i;
-                        vweights[vtop] = weights[curr][i];
-                        vtop++;
-                    }
+        }
+        for (int i = 0; i < numVertices; i++) {
+            for (int j = 0; j < numVertices; j++) {
+                if (weightsCopy[i][j] != INF) {
+                    edgeNode1[edgeTop] = i;
+                    edgeNode2[edgeTop] = j;
+                    edgeWeights[edgeTop] = weightsCopy[i][j];
+                    edgeTop++;
+                    weightsCopy[j][i] = INF;
                 }
-                
-                // Find incident edge with least weight
-                
-                
-                
-            }
-            
-            // Increment edgesTested and test the obtained minimum edge to see if it creates a cycle
-            edgesTested++;
-            bool createsCycle = true;
-            
-            // If the edge does not create a cycle, add the edge to the MST and decrement nodesLeft
-            if (!createsCycle) {
-                
-                nodesLeft--;
             }
         }
         
+        while (nodesLeft > 0) {
+            // While a spanning tree has not been discovered:
+            // Find the edge with the least weight (for such small numbers, selection sort is fine, so brute force searching for the minimum is adequate
+            double currWeight = edgeWeights[0];
+            int currEdgeNode1 = edgeNode1[0], currEdgeNode2 = edgeNode2[0];
+            for (int i = 0; i < nodesLeft; i++) {
+                if (edgeWeights[i] > currWeight) {
+                    currWeight = edgeWeights[i];
+                    currEdgeNode1 = edgeNode1[i]; currEdgeNode2 = edgeNode2[i];
+                }
+            }
+            
+            
+            // Test to see if the edge creates a cycle (such is only possible if the edge to be formed is between two vertices upon which are incident edges that have already been selected), using the union-find algorithm
+            int node1 = edgeNode1[edgeTop-1], node2 = edgeNode2[edgeTop-1], root1 = node1, root2 = node2;
+            edgesTested++;
+            if (edgesTested > 3 && disjointSetEdges[node1] != -1 && disjointSetEdges[node2] != -1) {
+                // If the nodes of the new edge have the same root, adding them forms a cycle
+                while (root1 >= 0) root1 = disjointSetEdges[root1];
+                while (root2 >= 0) root2 = disjointSetEdges[root2];
+                if (root1 != root2 || (root1 == -1 && root2 == -1)) {
+                    // If the root of node1 has a larger tree (more negative number in disjointSetEdges) than the root of node2,
+                    if (root2 < root1) {
+                        disjointSetEdges[root2] += disjointSetEdges[root1];
+                        disjointSetEdges[root1] = root2;
+                    }
+                    else {
+                        disjointSetEdges[root1] += disjointSetEdges[root2];
+                        disjointSetEdges[root2] = root1;
+                    }
+                }
+                MSTWeight += currWeight;
+                nodesLeft--;
+            }
+            edgeTop--;
+        }
         return std::pair<double, int>( MSTWeight, edgesTested );
     }
     else throw exception();
