@@ -218,8 +218,13 @@ std::pair<double, int> Weighted_graph::minimum_spanning_tree() const {
 }
 
 std::ostream &operator<<( std::ostream &out, Weighted_graph const &graph ) {
-    // Your implementation
-    
+    std::cout << "The following is an adjacency matrix representing the graph so far\n (INF indicates that there is no connection between the nodes; a finite value indicates the weight \nof the connection between the nodes):\n";
+    for (int i = 0; i < graph.numVertices; i++) {
+        for (int j = 0; j < graph.numVertices; j++) {
+            std::cout << graph.weights[i][j] << ' ';
+        }
+        std::cout << std::endl;
+    }
     return out;
 }
 
