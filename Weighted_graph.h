@@ -18,9 +18,6 @@
 #include <iostream>
 #include <limits>
 #include "Exception.h"
-#include "Dynamic_queue.h"
-
-// My current idea is to use an adjacency matrix and this is potentially more costly, but allows for unknowns, such as the number of edges. Can also represent with an edge list but searching this list is more costly
 
 class Weighted_graph {
 private:
@@ -36,7 +33,6 @@ private:
     Weighted_graph( Weighted_graph const & );
     Weighted_graph &operator=( Weighted_graph );
     
-    // your choice
     
 public:
     Weighted_graph( int = 10 );
@@ -59,8 +55,6 @@ const double Weighted_graph::INF = std::numeric_limits<double>::infinity();
 
 Weighted_graph::Weighted_graph( int n ) :
 numVertices(n), numEdges(0) {
-    // Assume a graph with vertices numbered from 0 through n − 1. The vertex i is given an ?initial? priority of i.
-
     weights = new double*[numVertices];
     for (int i = 0; i < numVertices; ++i)
         weights[i] = new double[numVertices];
@@ -212,6 +206,9 @@ std::pair<double, int> Weighted_graph::minimum_spanning_tree() const {
             }
             edgeTop--;
         }
+        for (int i = 0; i < numVertices; i++)
+            delete [] weightsCopy[i];
+        delete [] weightsCopy;
         return std::pair<double, int>( MSTWeight, edgesTested );
     }
     else throw exception();
