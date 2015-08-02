@@ -93,11 +93,7 @@ int Weighted_graph::degree(int vertex) const {
 
 int Weighted_graph::edge_count() const {
     // Returns the number of edges in the graph.
-    int count = 0;
-    for (int i = 0; i < numVertices; i++)
-        for (int j = 0; j < numVertices; j++)
-            if (weights[i][j] != INF) count++;
-    return (count/2);
+    return numEdges;
 }
 
 bool Weighted_graph::insert_edge( int i, int j, double w ) {
