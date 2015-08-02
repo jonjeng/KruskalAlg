@@ -23,6 +23,7 @@ class Weighted_graph {
 private:
     static const double INF;
     int numVertices;
+    int currSize;
     int numEdges;
     int* graphVertices;
     double** weights;
@@ -55,6 +56,10 @@ const double Weighted_graph::INF = std::numeric_limits<double>::infinity();
 
 Weighted_graph::Weighted_graph( int n ) :
 numVertices(n), numEdges(0) {
+    graphVertices = new int[numVertices];
+    for (int i = 0; i < numVertices; i++) {
+        graphVertices[i] = -1;
+    }
     weights = new double*[numVertices];
     for (int i = 0; i < numVertices; ++i)
         weights[i] = new double[numVertices];
@@ -65,7 +70,7 @@ numVertices(n), numEdges(0) {
 
 Weighted_graph::~Weighted_graph() {
     // The destructor frees up any memory allocated by the constructor.
-    delete graphVertices;
+    delete [] graphVertices;
     for (int i = 0; i < numVertices; ++i)
         delete [] weights[i];
     delete [] weights;
@@ -99,16 +104,41 @@ bool Weighted_graph::insert_edge( int i, int j, double w ) {
     // If i or j are outside the range of vertices or if the weight w is not positive, the argument(s) is/are illegal
     if ((i<0) || (i>=numVertices) || (j<0) || (j>=numVertices) || (w <= 0))
         throw illegal_argument();
-    // If i equals j and are in the graph, return false (self edges are inconsequential)
+    // If i equals j and bothare in the graph, return false (self edges are inconsequential)
     if (i==j && i >= 0 && i < numVertices && j >= 0 && j < numVertices)
         return false;
-    // If a parallel edge of inconsequential (equal or heavier) weight would be formed, return false
-    if (weights[i][j] != INF && w >= weights[i][j])
-        return false;
     // Otherwise, the new edge is safe to insert, as there was either no edge there yet, or an edge of greater weight (parallel edge - but shouldn't we only update the weight if it is lower than the preexisting weight?).
+    int top = 0;
+    if (graphVertices[numVertices - 1] != -1)
+        top = numVertices - 1;
+    else {
+        for (int n = 0; n < numVertices; n++) {
+            if (graphVertices[n] == -1) {
+                top = n;
+                break;
+            }
+        }
+    }
+    bool isNew_i = true, isNew_j = true;
+    for (int n = 0; n <= top; n++) {
+        if (graphVertices[n] == i) {
+            isNew_i = false;
+        }
+        if (graphVertices[n] == j) {
+            isNew_j = false;
+        }
+    }
+    if (isNew_i) {
+        currSize++;
+        graphVertices[top++] = i;
+    }
+    if (isNew_j) {
+        currSize++;
+        graphVertices[top++] = j;
+    }
+    if (weights[i][j] == INF) numEdges++;
     weights[i][j] = w;
     weights[j][i] = w;
-    numEdges++;
     return true;
 }
 
@@ -140,76 +170,96 @@ void Weighted_graph::clear_edges() {
 
 
 std::pair<double, int> Weighted_graph::minimum_spanning_tree() const {
-        // Use Kruskal's algorithm to find the minimum spanning tree. You will return the weight of the minimum spanning tree and the number of edges that were tested for insertion into the minimum spanning tree.
-        int edgesTested = 0, nodesLeft = 0, edgeNode1[numEdges], edgeNode2[numEdges], edgeTop = 0, disjointSetEdges[numVertices];
-        double MSTWeight = 0.0, edgeWeights[numEdges];
-        
-        for (int i = 0; i < numVertices; i++)
-            disjointSetEdges[i] = -1;
-        
-        // Store edges separately
-        double** weightsCopy = new double*[numVertices];
-        for (int i = 0; i < numVertices; i++)
-            weightsCopy[i] = new double[numVertices];
-        for (int i = 0; i < numVertices; i++) {
-            for (int j = 0; j < numVertices; j++) {
-                weightsCopy[i][j] = weights[i][j];
+    // Use Kruskal's algorithm to find the minimum spanning tree. You will return the weight of the minimum spanning tree and the number of edges that were tested for insertion into the minimum spanning tree.
+    int edgesTested = 0, nodesLeft = currSize, edgeNode1[numEdges], edgeNode2[numEdges], edgeTop = 0, disjointSetEdges[currSize];
+    double MSTWeight = 0.0, edgeWeights[numEdges];
+    
+    for (int i = 0; i < numVertices; i++)
+        disjointSetEdges[i] = -1;
+    
+    // Store edges separately
+    double** weightsCopy = new double*[currSize];
+    for (int i = 0; i < currSize; i++)
+        weightsCopy[i] = new double[currSize];
+    for (int i = 0; i < currSize; i++) {
+        for (int j = 0; j < currSize; j++) {
+            weightsCopy[i][j] = weights[i][j];
+        }
+    }
+    for (int i = 0; i < currSize; i++) {
+        for (int j = 0; j < currSize; j++) {
+            if (weightsCopy[i][j] != INF) {
+                edgeNode1[edgeTop] = i;
+                edgeNode2[edgeTop] = j;
+                edgeWeights[edgeTop] = weightsCopy[i][j];
+                edgeTop++;
+                weightsCopy[j][i] = INF;
             }
         }
-        for (int i = 0; i < numVertices; i++) {
-            for (int j = 0; j < numVertices; j++) {
-                if (weightsCopy[i][j] != INF) {
-                    edgeNode1[edgeTop] = i;
-                    edgeNode2[edgeTop] = j;
-                    edgeWeights[edgeTop] = weightsCopy[i][j];
-                    edgeTop++;
-                    weightsCopy[j][i] = INF;
-                    nodesLeft++;
-                }
-            }
-        }
+    }
     edgeTop--;
-        
-        while (nodesLeft > 0) {
-            // While a spanning tree has not been discovered:
-            // Find the edge with the least weight (for such small numbers, selection sort is fine, so brute force searching for the minimum is adequate
-            double currWeight = edgeWeights[0];
-            int currEdgeNode1 = edgeNode1[0], currEdgeNode2 = edgeNode2[0];
-            for (int i = 0; i < nodesLeft; i++) {
-                if (edgeWeights[i] > currWeight) {
-                    currWeight = edgeWeights[i];
-                    currEdgeNode1 = edgeNode1[i]; currEdgeNode2 = edgeNode2[i];
-                }
-            }
-            
-            
-            // Test to see if the edge creates a cycle (such is only possible if the edge to be formed is between two vertices upon which are incident edges that have already been selected), using the union-find algorithm
-            int node1 = edgeNode1[edgeTop], node2 = edgeNode2[edgeTop], root1 = node1, root2 = node2;
-            edgesTested++;
-            if (edgesTested > 3 && disjointSetEdges[node1] != -1 && disjointSetEdges[node2] != -1) {
-                // If the nodes of the new edge have the same root, adding them forms a cycle
-                while (root1 >= 0) root1 = disjointSetEdges[root1];
-                while (root2 >= 0) root2 = disjointSetEdges[root2];
-                if (root1 != root2 || (root1 == -1 && root2 == -1)) {
-                    // If the root of node1 has a larger tree (more negative number in disjointSetEdges) than the root of node2,
-                    if (root2 < root1) {
-                        disjointSetEdges[root2] += disjointSetEdges[root1];
-                        disjointSetEdges[root1] = root2;
-                    }
-                    else {
-                        disjointSetEdges[root1] += disjointSetEdges[root2];
-                        disjointSetEdges[root2] = root1;
-                    }
-                }
-                MSTWeight += currWeight;
-                nodesLeft--;
+    bool done = false;
+    while (!done) {
+        // While a spanning tree has not been discovered:
+        // Find the edge with the least weight (for such small numbers, selection sort is fine, so brute force searching for the minimum is adequate
+        double currWeight = edgeWeights[0];
+        int currEdgeNode1 = edgeNode1[0], currEdgeNode2 = edgeNode2[0], currEdge = 0;
+        for (int i = 0; i < numEdges; i++) {
+            if (edgeWeights[i] < currWeight) {
+                currEdge = i;
+                currWeight = edgeWeights[i];
+                currEdgeNode1 = edgeNode1[i]; currEdgeNode2 = edgeNode2[i];
             }
         }
-        for (int i = 0; i < numVertices; i++)
-            delete [] weightsCopy[i];
-        delete [] weightsCopy;
-        return std::pair<double, int>( MSTWeight, edgesTested );
-
+        edgeWeights[currEdge] = INF;
+        
+        
+        // Test to see if the edge creates a cycle, using the union-find algorithm
+        int /*node1 = edgeNode1[edgeTop], node2 = edgeNode2[edgeTop], */ind_root1 = currEdgeNode1, root1 = disjointSetEdges[ind_root1], ind_root2 = currEdgeNode2, root2 = disjointSetEdges[ind_root2];
+        edgesTested++;
+        edgeTop--;
+        if (disjointSetEdges[currEdgeNode1] == -1) {
+            nodesLeft--;
+        }
+        if (disjointSetEdges[currEdgeNode2] == -1) {
+            nodesLeft--;
+        }
+        
+        while (root1 >= 0) {
+            ind_root1 = root1;
+            root1 = disjointSetEdges[ind_root1];
+        }
+        while (root2 >= 0) {
+            ind_root2 = root2;
+            root2 = disjointSetEdges[ind_root2];
+        }
+        // If the nodes of the edge have different roots, adding them does not form a cycle
+        if (root1 != root2 || (ind_root1 != ind_root2 && root1 < 0 && root2 < 0)) {
+            // If the root of node1 has a larger tree (more negative number in disjointSetEdges) than the root of node2,
+            if (root2 < root1) {
+                disjointSetEdges[ind_root2] += disjointSetEdges[ind_root1];
+                disjointSetEdges[ind_root1] = ind_root2;
+            }
+            else {
+                disjointSetEdges[ind_root1] += disjointSetEdges[ind_root2];
+                disjointSetEdges[ind_root2] = ind_root1;
+            }
+            
+            MSTWeight += currWeight;
+        }
+        int count = 0;
+        for (int z = 0; z < currSize; z++) {
+            if (disjointSetEdges[z] < 0) {
+                count++;
+            }
+        }
+        if (edgesTested == numEdges || count == 1)
+            done = true;
+    }
+    for (int i = 0; i < currSize; i++)
+        delete [] weightsCopy[i];
+    delete [] weightsCopy;
+    return std::pair<double, int>( MSTWeight, edgesTested );
 }
 
 std::ostream &operator<<( std::ostream &out, Weighted_graph const &graph ) {
