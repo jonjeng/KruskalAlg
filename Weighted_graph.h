@@ -97,7 +97,7 @@ int Weighted_graph::edge_count() const {
 
 bool Weighted_graph::insert_edge( int i, int j, double w ) {
     // If i or j are outside the range of vertices or if the weight w is not positive, the argument(s) is/are illegal
-    if ((i<0) || (i>numVertices) || (j<0) || (j>numVertices) || (w <= 0))
+    if ((i<0) || (i>=numVertices) || (j<0) || (j>=numVertices) || (w <= 0))
         throw illegal_argument();
     // If i equals j and are in the graph, return false (self edges are inconsequential)
     if (i==j && i >= 0 && i < numVertices && j >= 0 && j < numVertices)
@@ -140,10 +140,8 @@ void Weighted_graph::clear_edges() {
 
 
 std::pair<double, int> Weighted_graph::minimum_spanning_tree() const {
-    // If there aren't at least n + 1 vertices, where n is the number of edges, there is no spanning tree
-    if (numEdges >= numVertices - 1) {
         // Use Kruskal's algorithm to find the minimum spanning tree. You will return the weight of the minimum spanning tree and the number of edges that were tested for insertion into the minimum spanning tree.
-        int edgesTested = 0, nodesLeft = numVertices, edgeNode1[numEdges], edgeNode2[numEdges], edgeTop = 0, disjointSetEdges[numVertices];
+        int edgesTested = 0, nodesLeft = 0, edgeNode1[numEdges], edgeNode2[numEdges], edgeTop = 0, disjointSetEdges[numVertices];
         double MSTWeight = 0.0, edgeWeights[numEdges];
         
         for (int i = 0; i < numVertices; i++)
@@ -166,9 +164,11 @@ std::pair<double, int> Weighted_graph::minimum_spanning_tree() const {
                     edgeWeights[edgeTop] = weightsCopy[i][j];
                     edgeTop++;
                     weightsCopy[j][i] = INF;
+                    nodesLeft++;
                 }
             }
         }
+    edgeTop--;
         
         while (nodesLeft > 0) {
             // While a spanning tree has not been discovered:
@@ -184,7 +184,7 @@ std::pair<double, int> Weighted_graph::minimum_spanning_tree() const {
             
             
             // Test to see if the edge creates a cycle (such is only possible if the edge to be formed is between two vertices upon which are incident edges that have already been selected), using the union-find algorithm
-            int node1 = edgeNode1[edgeTop-1], node2 = edgeNode2[edgeTop-1], root1 = node1, root2 = node2;
+            int node1 = edgeNode1[edgeTop], node2 = edgeNode2[edgeTop], root1 = node1, root2 = node2;
             edgesTested++;
             if (edgesTested > 3 && disjointSetEdges[node1] != -1 && disjointSetEdges[node2] != -1) {
                 // If the nodes of the new edge have the same root, adding them forms a cycle
@@ -204,14 +204,12 @@ std::pair<double, int> Weighted_graph::minimum_spanning_tree() const {
                 MSTWeight += currWeight;
                 nodesLeft--;
             }
-            edgeTop--;
         }
         for (int i = 0; i < numVertices; i++)
             delete [] weightsCopy[i];
         delete [] weightsCopy;
         return std::pair<double, int>( MSTWeight, edgesTested );
-    }
-    else throw exception();
+
 }
 
 std::ostream &operator<<( std::ostream &out, Weighted_graph const &graph ) {
