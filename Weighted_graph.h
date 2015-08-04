@@ -173,26 +173,17 @@ std::pair<double, int> Weighted_graph::minimum_spanning_tree() const {
     for (int i = 0; i < numVertices; i++)
         disjointSetEdges[i] = -1;
     
-    // Store edges separately
-    double** weightsCopy = new double*[currSize];
-    for (int i = 0; i < currSize; i++)
-        weightsCopy[i] = new double[currSize];
-    for (int i = 0; i < currSize; i++) {
-        for (int j = 0; j < currSize; j++) {
-            weightsCopy[i][j] = weights[i][j];
-        }
-    }
-    for (int i = 0; i < currSize; i++) {
-        for (int j = 0; j < currSize; j++) {
-            if (weightsCopy[i][j] != INF) {
+    for (int i = 1; i < currSize; i++) {
+        for (int j = 0; j < i; j++) {
+            if (weights[i][j] != INF) {
                 edgeNode1[edgeTop] = i;
                 edgeNode2[edgeTop] = j;
-                edgeWeights[edgeTop] = weightsCopy[i][j];
+                edgeWeights[edgeTop] = weights[i][j];
                 edgeTop++;
-                weightsCopy[j][i] = INF;
             }
         }
     }
+    
     edgeTop--;
     bool done = false;
     while (!done) {
@@ -252,9 +243,7 @@ std::pair<double, int> Weighted_graph::minimum_spanning_tree() const {
         if (edgesTested == numEdges || count == 1)
             done = true;
     }
-    for (int i = 0; i < currSize; i++)
-        delete [] weightsCopy[i];
-    delete [] weightsCopy;
+    
     return std::pair<double, int>( MSTWeight, edgesTested );
 }
 
